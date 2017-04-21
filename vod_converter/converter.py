@@ -101,7 +101,7 @@ class Egestor:
         """
         raise NotImplementedError()
 
-    def egest(self, *, image_detections, root):
+    def egest(self, image_detections, root):
         """
         Output data to the filesystem.
 
@@ -114,7 +114,7 @@ class Egestor:
         raise NotImplementedError()
 
 
-def convert(*, from_path, ingestor, to_path, egestor, select_only_known_labels, filter_images_without_labels):
+def convert(from_path, ingestor, to_path, egestor, select_only_known_labels, filter_images_without_labels):
     """
     Converts between data formats, validating that the converted data matches
     `IMAGE_DETECTION_SCHEMA` along the way.
@@ -146,16 +146,16 @@ def validate_image_detections(image_detections):
         try:
             validate_schema(image_detection, IMAGE_DETECTION_SCHEMA)
         except SchemaError as se:
-            raise Exception(f"at index {i}") from se
+            raise Exception("at index %d" % i)
         image = image_detection['image']
         for detection in image_detection['detections']:
             if detection['right'] >= image['width'] or detection['bottom'] >= image['height']:
-                raise ValueError(f"Image {image} has out of bounds bounding box {detection}")
+                raise ValueError("Image %s has out of bounds bounding box %s" % (image, detection))
             if detection['right'] <= detection['left'] or detection['bottom'] <= detection['top']:
-                raise ValueError(f"Image {image} has zero dimension bbox {detection}")
+                raise ValueError("Image %image has zero dimension bbox %s" % (image, detection))
 
 
-def convert_labels(*, image_detections, expected_labels,
+def convert_labels(image_detections, expected_labels,
                    select_only_known_labels, filter_images_without_labels):
     convert_dict = {}
     for label, aliases in expected_labels.items():

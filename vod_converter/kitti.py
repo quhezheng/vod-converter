@@ -31,6 +31,8 @@ each row corresponds to one object. The 15 columns represent:
 """
 
 import csv
+
+import errno
 import os
 from PIL import Image
 import shutil
@@ -45,10 +47,10 @@ class KITTIIngestor(Ingestor):
             'training/label_2'
         ]
         for subdir in expected_dirs:
-            if not os.path.isdir(f"{path}/{subdir}"):
-                return False, f"Expected subdirectory {subdir} within {path}"
-        if not os.path.isfile(f"{path}/train.txt"):
-            return False, f"Expected train.txt file within {path}"
+            if not os.path.isdir("%s/%s" % (path, subdir)):
+                return False, "Expected subdirectory %s within %s" % (subdir, path)
+        if not os.path.isfile("%s/train.txt" % (path)):
+            return False, "Expected train.txt file within %s" % (path)
         return True, None
 
     def ingest(self, path):
@@ -61,20 +63,20 @@ class KITTIIngestor(Ingestor):
 
     def find_image_ext(self, root, image_id):
         for image_ext in ['png', 'jpg']:
-            if os.path.exists(f"{root}/training/image_2/{image_id}.{image_ext}"):
+            if os.path.exists("%s/training/image_2/%s.%s" % (root, image_id, image_ext)):
                 return image_ext
-        raise Exception(f"could not find jpg or png for {image_id} at {root}/training/image_2")
+        raise Exception("could not find jpg or png for %s at %s/training/image_2" % (image_id, root))
 
     def _get_image_ids(self, root):
-        path = f"{root}/train.txt"
+        path = "%s/train.txt" % (root)
         with open(path) as f:
             return f.read().strip().split('\n')
 
-    def _get_image_detection(self, root, image_id, *, image_ext='png'):
-        detections_fpath = f"{root}/training/label_2/{image_id}.txt"
+    def _get_image_detection(self, root, image_id, image_ext='png'):
+        detections_fpath = "%s/training/label_2/%s.txt" % (root, image_id)
         detections = self._get_detections(detections_fpath)
         detections = [det for det in detections if det['left'] < det['right'] and det['top'] < det['bottom']]
-        image_path = f"{root}/training/image_2/{image_id}.{image_ext}"
+        image_path = "%s/training/image_2/%s.%s" % (root, image_id, image_ext)
         image_width, image_height = _image_dimensions(image_path)
         return {
             'image': {
@@ -108,6 +110,13 @@ def _image_dimensions(path):
     with Image.open(path) as image:
         return image.width, image.height
 
+def makedirs(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
 DEFAULT_TRUNCATED = 0.0 # 0% truncated
 DEFAULT_OCCLUDED = 0    # fully visible
 
@@ -125,24 +134,24 @@ class KITTIEgestor(Egestor):
             'Van': [],
         }
 
-    def egest(self, *, image_detections, root):
-        images_dir = f"{root}/training/image_2"
-        os.makedirs(images_dir, exist_ok=True)
-        labels_dir = f"{root}/training/label_2"
-        os.makedirs(labels_dir, exist_ok=True)
+    def egest(self, image_detections, root):
+        images_dir = "%s/training/image_2" % (root)
+        makedirs(images_dir)
+        labels_dir = "%s/training/label_2" % (root)
+        makedirs(labels_dir)
 
-        id_file = f"{root}/train.txt"
+        id_file = "%s/train.txt" % (root)
 
         for image_detection in image_detections:
             image = image_detection['image']
             image_id = image['id']
             src_extension = image['path'].split('.')[-1]
-            shutil.copyfile(image['path'], f"{images_dir}/{image_id}.{src_extension}")
+            shutil.copyfile(image['path'], "%s/%s.%s" % (images_dir, image_id, src_extension))
 
             with open(id_file, 'a') as out_image_index_file:
-                out_image_index_file.write(f"{images_dir}/{image_id}.{src_extension} {labels_dir}/{image_id}.txt\n")
+                out_image_index_file.write("%s/%s.%s %s/%s.txt\n" % (images_dir, image_id, src_extension, labels_dir, image_id))
 
-            out_labels_path = f"{labels_dir}/{image_id}.txt"
+            out_labels_path = "%s/%s.txt" % (labels_dir, image_id)
             with open(out_labels_path, 'w') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=' ', quoting=csv.QUOTE_MINIMAL)
 

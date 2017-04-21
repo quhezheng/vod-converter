@@ -66,23 +66,23 @@ class KITTITrackingIngestor(Ingestor):
             'label_02'
         ]
         for subdir in expected_dirs:
-            if not os.path.isdir(f"{path}/{subdir}"):
-                return False, f"Expected subdirectory {subdir} within {path}"
+            if not os.path.isdir("%s/%s" % (path, subdir)):
+                return False, "Expected subdirectory %s within %s" % (subdir, path)
         return True, None
 
     def ingest(self, path):
-        fs = os.listdir(f"{path}/label_02")
+        fs = os.listdir("%s/label_02" % (path))
         label_fnames = [f for f in fs if LABEL_F_PATTERN.match(f)]
         image_detections = []
         for label_fname in label_fnames:
             frame_name = label_fname.split(".")[0]
-            labels_path = f"{path}/label_02/{label_fname}"
-            images_dir = f"{path}/image_02/{frame_name}"
+            labels_path = "%s/label_02/%s" % (path, label_fname)
+            images_dir = "%s/image_02/%s" % (path, frame_name)
             image_detections.extend(
                 self._get_track_image_detections(frame_name=frame_name, labels_path=labels_path, images_dir=images_dir))
         return image_detections
 
-    def _get_track_image_detections(self, *, frame_name, labels_path, images_dir):
+    def _get_track_image_detections(self, frame_name, labels_path, images_dir):
         detections_by_frame = defaultdict(list)
         with open(labels_path) as f:
             f_csv = csv.reader(f, delimiter=' ')
@@ -101,7 +101,7 @@ class KITTITrackingIngestor(Ingestor):
         image_detections = []
         for frame_id in sorted(detections_by_frame.keys()):
             frame_dets = detections_by_frame[frame_id]
-            image_path = f"{images_dir}/{frame_id:06d}.png"
+            image_path = "%s/%06d.png" % (images_dir, frame_id)
             with Image.open(image_path) as image:
                 image_width = image.width
                 image_height = image.height
@@ -115,7 +115,7 @@ class KITTITrackingIngestor(Ingestor):
 
                 image_detections.append({
                     'image': {
-                        'id': f"{frame_name}-{frame_id:06d}",
+                        'id': "%d-%06d" % (frame_name, frame_id),
                         'path': image_path,
                         'segmented_path': None,
                         'width': image.width,
