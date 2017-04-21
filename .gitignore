@@ -3,3 +3,4 @@
 kitti-tracking*
 env/
 env2/
+*.pyc

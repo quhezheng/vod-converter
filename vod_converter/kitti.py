@@ -149,7 +149,7 @@ class KITTIEgestor(Egestor):
             shutil.copyfile(image['path'], "%s/%s.%s" % (images_dir, image_id, src_extension))
 
             with open(id_file, 'a') as out_image_index_file:
-                out_image_index_file.write("%s/%s.%s %s/%s.txt\n" % (images_dir, image_id, src_extension, labels_dir, image_id))
+                out_image_index_file.write("%s\n" % (image_id))
 
             out_labels_path = "%s/%s.txt" % (labels_dir, image_id)
             with open(out_labels_path, 'w') as csvfile:
