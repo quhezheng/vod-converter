@@ -136,9 +136,12 @@ class KITTIEgestor(Egestor):
 
     def egest(self, image_detections, root):
         images_dir = "%s/training/image_2" % (root)
-        makedirs(images_dir)
+        if not os.path.exists(images_dir):
+            os.makedirs(images_dir)
+
         labels_dir = "%s/training/label_2" % (root)
-        makedirs(labels_dir)
+        if not os.path.exists(images_dir):
+            os.makedirs(images_dir)
 
         id_file = "%s/train.txt" % (root)
 

@@ -113,7 +113,8 @@ class VOCEgestor(Egestor):
         segmentations_dir_created = False
 
         for to_create in [image_sets_path, images_path, annotations_path]:
-            os.makedirs(to_create, exist_ok=True)
+            if not os.path.exists(to_create):
+                os.makedirs(to_create)
 
         for image_detection in image_detections:
             image = image_detection['image']
