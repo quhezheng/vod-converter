@@ -96,6 +96,8 @@ class KITTIIngestor(Ingestor):
             for row in f_csv:
                 x1, y1, x2, y2 = map(float, row[4:8])
                 label = row[0]
+                if label  == 'Misc' or label == 'DontCare':
+                    continue
                 detections.append({
                     'label': label,
                     'left': max(0.0, x1),
